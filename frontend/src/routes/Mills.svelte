@@ -1,13 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { api } from '../lib/api';
   import { millStatusLabel } from '../lib/labels';
+  import { millWorkshopFilter } from '../lib/nav';
   import type { Mill, MillStatus, Workshop } from '../lib/types';
 
   let rows: Mill[] = [];
   let workshops: Workshop[] = [];
   let error = '';
   let editingId: number | null = null;
+  let filterWorkshopId = '';
 
   let form = {
     workshopId: '',
@@ -20,8 +23,9 @@
   async function load() {
     error = '';
     try {
+      const q = filterWorkshopId ? `?workshopId=${encodeURIComponent(filterWorkshopId)}` : '';
       [rows, workshops] = await Promise.all([
-        api<Mill[]>('/mills'),
+        api<Mill[]>(`/mills${q}`),
         api<Workshop[]>('/workshops'),
       ]);
     } catch (e) {
@@ -29,7 +33,14 @@
     }
   }
 
-  onMount(load);
+  onMount(() => {
+    const pending = get(millWorkshopFilter);
+    if (pending != null) {
+      filterWorkshopId = String(pending);
+      millWorkshopFilter.set(null);
+    }
+    load();
+  });
 
   function workshopName(id: number): string {
     return workshops.find((w) => w.id === id)?.name || `#${id}`;
@@ -133,6 +144,17 @@
 </section>
 
 <section class="panel">
+  <div class="list-head">
+    <h2>机台列表</h2>
+    <label class="filter">车间筛选
+      <select bind:value={filterWorkshopId} on:change={load}>
+        <option value="">全部车间</option>
+        {#each workshops as w}
+          <option value={String(w.id)}>{w.name}</option>
+        {/each}
+      </select>
+    </label>
+  </div>
   <table class="data-table">
     <thead>
       <tr>
@@ -165,3 +187,37 @@
     </tbody>
   </table>
 </section>
+
+<style>
+  .list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .list-head h2 {
+    margin: 0;
+  }
+
+  .filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--steel);
+  }
+
+  .filter select {
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.35);
+    color: white;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .filter select:focus {
+    outline: none;
+    border-color: var(--vermillion-700);
+  }
+</style>

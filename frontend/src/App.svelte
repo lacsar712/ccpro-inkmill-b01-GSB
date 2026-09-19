@@ -1,15 +1,13 @@
 <script lang="ts">
   import { token, user, clearSession } from './lib/auth';
+  import { page } from './lib/nav';
+  import type { PageId } from './lib/nav';
   import Login from './routes/Login.svelte';
   import Dashboard from './routes/Dashboard.svelte';
   import Workshops from './routes/Workshops.svelte';
   import Mills from './routes/Mills.svelte';
   import ViscositySamples from './routes/ViscositySamples.svelte';
   import GrindPasses from './routes/GrindPasses.svelte';
-
-  type PageId = 'dashboard' | 'workshops' | 'mills' | 'samples' | 'passes';
-
-  let page: PageId = 'dashboard';
 
   const nav: { id: PageId; label: string }[] = [
     { id: 'dashboard', label: '仪表盘' },
@@ -21,7 +19,7 @@
 
   function logout() {
     clearSession();
-    page = 'dashboard';
+    $page = 'dashboard';
   }
 </script>
 
@@ -39,7 +37,7 @@
       </div>
       <nav>
         {#each nav as item}
-          <button class:active={page === item.id} on:click={() => (page = item.id)}>
+          <button class:active={$page === item.id} on:click={() => ($page = item.id)}>
             {item.label}
           </button>
         {/each}
@@ -51,13 +49,13 @@
       </div>
     </aside>
     <main class="main">
-      {#if page === 'dashboard'}
+      {#if $page === 'dashboard'}
         <Dashboard />
-      {:else if page === 'workshops'}
+      {:else if $page === 'workshops'}
         <Workshops />
-      {:else if page === 'mills'}
+      {:else if $page === 'mills'}
         <Mills />
-      {:else if page === 'samples'}
+      {:else if $page === 'samples'}
         <ViscositySamples />
       {:else}
         <GrindPasses />

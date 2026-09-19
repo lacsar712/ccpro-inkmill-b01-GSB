@@ -43,9 +43,13 @@ def _validate(body: dict) -> str | None:
 @bp.get("")
 @jwt_required()
 def list_mills():
+    workshop_id = request.args.get("workshopId", type=int)
     db = SessionLocal()
     try:
-        rows = db.query(Mill).order_by(Mill.id.desc()).all()
+        query = db.query(Mill)
+        if workshop_id:
+            query = query.filter(Mill.workshop_id == workshop_id)
+        rows = query.order_by(Mill.id.desc()).all()
         return jsonify([mill_json(r) for r in rows])
     finally:
         db.close()

@@ -44,9 +44,17 @@ export interface GrindPass {
   operatorName: string;
 }
 
+export interface WorkshopMillStats {
+  workshopId: number;
+  workshopName: string;
+  grindingMillCount: number;
+  millTotal: number;
+}
+
 export interface DashboardStats {
   workshopTotal: number;
   grindingMillCount: number;
   samplesLast24h: number;
   passesLast7d: number;
+  byWorkshop: WorkshopMillStats[];
 }

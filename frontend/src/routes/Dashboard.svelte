@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { millWorkshopFilter, page } from '../lib/nav';
   import type { DashboardStats } from '../lib/types';
 
   let data: DashboardStats | null = null;
@@ -16,6 +17,11 @@
       loading = false;
     }
   });
+
+  function gotoMills(workshopId: number) {
+    millWorkshopFilter.set(workshopId);
+    page.set('mills');
+  }
 </script>
 
 <header class="page-head">
@@ -46,6 +52,32 @@
       <div class="v">{data.passesLast7d}</div>
     </article>
   </div>
+
+  <section class="panel by-workshop">
+    <h2>按车间</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>车间</th>
+          <th>研磨中机台</th>
+          <th>机台总数</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each data.byWorkshop ?? [] as w}
+          <tr class="row-link" on:click={() => gotoMills(w.workshopId)}>
+            <td>{w.workshopName}</td>
+            <td>{w.grindingMillCount}</td>
+            <td>{w.millTotal}</td>
+            <td class="ops"><span class="link-btn">查看机台</span></td>
+          </tr>
+        {:else}
+          <tr><td colspan="4">暂无数据</td></tr>
+        {/each}
+      </tbody>
+    </table>
+  </section>
 {/if}
 
 <style>
@@ -84,6 +116,19 @@
 
   .accent {
     color: var(--vermillion-400);
+  }
+
+  .by-workshop {
+    margin-top: 1rem;
+  }
+
+  .row-link {
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .row-link:hover {
+    background: rgba(192, 57, 43, 0.12);
   }
 
   @media (max-width: 900px) {
