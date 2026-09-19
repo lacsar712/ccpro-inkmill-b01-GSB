@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { api } from '../lib/api';
   import type { DashboardStats } from '../lib/types';
+
+  const dispatch = createEventDispatcher<{ openWorkshop: number }>();
 
   let data: DashboardStats | null = null;
   let error = '';
@@ -16,6 +18,10 @@
       loading = false;
     }
   });
+
+  function openRow(workshopId: number) {
+    dispatch('openWorkshop', workshopId);
+  }
 </script>
 
 <header class="page-head">
@@ -46,6 +52,44 @@
       <div class="v">{data.passesLast7d}</div>
     </article>
   </div>
+
+  <section class="panel">
+    <h2>按车间</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>车间ID</th>
+          <th>车间</th>
+          <th>研磨中机台</th>
+          <th>机台总数</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each data.byWorkshop as row}
+          <tr
+            class="clickable"
+            role="button"
+            tabindex="0"
+            title="查看该车间研磨机"
+            on:click={() => openRow(row.workshopId)}
+            on:keydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openRow(row.workshopId);
+              }
+            }}
+          >
+            <td>{row.workshopId}</td>
+            <td>{row.workshopName}</td>
+            <td><span class="accent">{row.grindingMillCount}</span></td>
+            <td>{row.millTotal}</td>
+          </tr>
+        {:else}
+          <tr><td colspan="4">暂无数据</td></tr>
+        {/each}
+      </tbody>
+    </table>
+  </section>
 {/if}
 
 <style>
@@ -84,6 +128,23 @@
 
   .accent {
     color: var(--vermillion-400);
+  }
+
+  .panel {
+    margin-top: 1.25rem;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  .clickable:hover {
+    background: rgba(192, 57, 43, 0.12);
+  }
+
+  .clickable:focus-visible {
+    outline: 2px solid var(--vermillion-700);
+    outline-offset: -2px;
   }
 
   @media (max-width: 900px) {

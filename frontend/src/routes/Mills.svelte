@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { api } from '../lib/api';
   import { millStatusLabel } from '../lib/labels';
   import type { Mill, MillStatus, Workshop } from '../lib/types';
+
+  export let workshopFilter: number | null = null;
+  const dispatch = createEventDispatcher<{ clearFilter: void }>();
 
   let rows: Mill[] = [];
   let workshops: Workshop[] = [];
@@ -30,6 +33,19 @@
   }
 
   onMount(load);
+
+  $: filteredRows = workshopFilter == null
+    ? rows
+    : rows.filter((r) => r.workshopId === workshopFilter);
+
+  $: filterName = workshopFilter == null
+    ? ''
+    : workshops.find((w) => w.id === workshopFilter)?.name || `#${workshopFilter}`;
+
+  // 带筛选进入时，新增表单默认选中该车间
+  $: if (workshopFilter != null && form.workshopId !== String(workshopFilter)) {
+    form.workshopId = String(workshopFilter);
+  }
 
   function workshopName(id: number): string {
     return workshops.find((w) => w.id === id)?.name || `#${id}`;
@@ -99,6 +115,13 @@
   <div class="err">{error}</div>
 {/if}
 
+{#if workshopFilter != null}
+  <div class="filter-bar">
+    <span>仅显示车间 <strong>{filterName}</strong>（#{workshopFilter}）的研磨机</span>
+    <button class="link-btn" on:click={() => dispatch('clearFilter')}>清除筛选</button>
+  </div>
+{/if}
+
 <section class="panel">
   <h2>{editingId ? '编辑研磨机' : '新增研磨机'}</h2>
   <div class="fields">
@@ -146,7 +169,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each rows as row}
+      {#each filteredRows as row}
         <tr>
           <td>{row.id}</td>
           <td>{workshopName(row.workshopId)}</td>
@@ -160,8 +183,22 @@
           </td>
         </tr>
       {:else}
-        <tr><td colspan="7">暂无数据</td></tr>
+        <tr><td colspan="7">{workshopFilter != null ? '该车间暂无研磨机' : '暂无数据'}</td></tr>
       {/each}
     </tbody>
   </table>
 </section>
+
+<style>
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgba(231, 76, 60, 0.45);
+    background: rgba(139, 37, 0, 0.15);
+    font-size: 0.9rem;
+  }
+</style>

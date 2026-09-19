@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from app.database import SessionLocal
 from app.models.grind_pass import GrindPass
@@ -46,12 +46,40 @@ def summary():
             or 0
         )
 
+        grinding_per_workshop = func.coalesce(
+            func.sum(case((Mill.status == "grinding", 1), else_=0)), 0
+        )
+        workshop_rows = (
+            db.execute(
+                select(
+                    Workshop.id.label("workshop_id"),
+                    Workshop.name.label("workshop_name"),
+                    grinding_per_workshop.label("grinding_mill_count"),
+                    func.count(Mill.id).label("mill_total"),
+                )
+                .outerjoin(Mill, Mill.workshop_id == Workshop.id)
+                .group_by(Workshop.id, Workshop.name)
+                .order_by(Workshop.id)
+            )
+            .all()
+        )
+        by_workshop = [
+            {
+                "workshopId": r.workshop_id,
+                "workshopName": r.workshop_name,
+                "grindingMillCount": int(r.grinding_mill_count),
+                "millTotal": int(r.mill_total),
+            }
+            for r in workshop_rows
+        ]
+
         return jsonify(
             {
                 "workshopTotal": workshop_total,
                 "grindingMillCount": grinding_mill_count,
                 "samplesLast24h": samples_last_24h,
                 "passesLast7d": passes_last_7d,
+                "byWorkshop": by_workshop,
             }
         )
     finally:

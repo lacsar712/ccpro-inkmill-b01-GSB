@@ -10,6 +10,7 @@
   type PageId = 'dashboard' | 'workshops' | 'mills' | 'samples' | 'passes';
 
   let page: PageId = 'dashboard';
+  let millWorkshopFilter: number | null = null;
 
   const nav: { id: PageId; label: string }[] = [
     { id: 'dashboard', label: '仪表盘' },
@@ -19,8 +20,19 @@
     { id: 'passes', label: '研磨遍次' },
   ];
 
+  function go(id: PageId) {
+    if (id !== 'mills') millWorkshopFilter = null;
+    page = id;
+  }
+
+  function openMillsForWorkshop(workshopId: number) {
+    millWorkshopFilter = workshopId;
+    page = 'mills';
+  }
+
   function logout() {
     clearSession();
+    millWorkshopFilter = null;
     page = 'dashboard';
   }
 </script>
@@ -39,7 +51,7 @@
       </div>
       <nav>
         {#each nav as item}
-          <button class:active={page === item.id} on:click={() => (page = item.id)}>
+          <button class:active={page === item.id} on:click={() => go(item.id)}>
             {item.label}
           </button>
         {/each}
@@ -52,11 +64,11 @@
     </aside>
     <main class="main">
       {#if page === 'dashboard'}
-        <Dashboard />
+        <Dashboard on:openWorkshop={(e) => openMillsForWorkshop(e.detail)} />
       {:else if page === 'workshops'}
         <Workshops />
       {:else if page === 'mills'}
-        <Mills />
+        <Mills workshopFilter={millWorkshopFilter} on:clearFilter={() => (millWorkshopFilter = null)} />
       {:else if page === 'samples'}
         <ViscositySamples />
       {:else}
